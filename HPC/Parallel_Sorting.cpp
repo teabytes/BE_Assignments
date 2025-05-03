@@ -34,14 +34,32 @@ class Sorter {
 
     void parallelBubbleSort() {
         int n = arr.size();
-        for (int i=0; i<n-1; i++) {
-            #pragma omp parallel for
-            for (int j=0; j<n-i-1; j++) {
-                if (arr[j] > arr[j+1]) {
-                    #pragma omp critical  // to avoid race condition during swapping
-                    swap(arr[j], arr[j+1]);
+        bool sorted = false;
+
+        // odd-even transposition sort pattern
+        while (!sorted) {
+            bool localSorted = true;
+
+            // even-indexed passes (0,2,4,...)
+            #pragma omp parallel for reduction(&&:localSorted)
+            for (int i=0; i<n-1; i+=2) {
+                if (arr[i] > arr[i+1]) {
+                    swap(arr[i], arr[i+1]);
+                    localSorted = false;
                 }
             }
+
+            // odd-indexed passes (1,3,5,...)
+            #pragma omp parallel for reduction(&&:localSorted)
+            for (int i=1; i<n-1; i+=2) {
+                if (arr[i] > arr[i+1]) {
+                    swap(arr[i], arr[i+1]);
+                    localSorted = false;
+                }
+            }
+
+            // stop when no swaps were made in both passes
+            sorted = localSorted;
         }
     }
 
@@ -107,13 +125,13 @@ class Sorter {
 
 
 int main() {
-    int n = 10000;  // large array size
+    int n = 100000;  // large array size
     vector<int> input(n);
 
     // generate a random array
     srand(time(0));  // seeds the generator with current time
     for (int i=0; i<n; i++) {
-        input[i] = rand() % 1000;
+        input[i] = rand() % 100 + 1;
     }
 
     Sorter s(input);
@@ -121,27 +139,27 @@ int main() {
     double start = omp_get_wtime();
     s.sequentialBubbleSort();
     double end = omp_get_wtime();
-    cout << "\nSequential Bubble Sort Time: " << (end - start) * 1000 << " ms\n";
+    cout << "\nSequential Bubble Sort Time: " << (end - start) << " secs";
 
     s.reset(input);
     start = omp_get_wtime();
     s.parallelBubbleSort();
     end = omp_get_wtime();
-    cout << "Parallel Bubble Sort Time: " << (end - start) * 1000 << " ms\n";
+    cout << "\nParallel Bubble Sort Time: " << (end - start) << " secs";
 
     s.reset(input);
     start = omp_get_wtime();
     s.sequentialMergeSort(0, n - 1);
     end = omp_get_wtime();
-    cout << fixed << setprecision(6);
-    cout << "Sequential Merge Sort Time: " << (end - start) * 1000 << " ms\n";
+    cout << fixed << setprecision(3);
+    cout << "\nSequential Merge Sort Time: " << (end - start) * 1000 << " ms";
 
     s.reset(input);
     start = omp_get_wtime();
     s.parallelMergeSort(0, n - 1);
     end = omp_get_wtime();
-    cout << fixed << setprecision(6);
-    cout << "Parallel Merge Sort Time: " << (end - start) * 1000 << " ms\n";
+    cout << fixed << setprecision(3);
+    cout << "\nParallel Merge Sort Time: " << (end - start) * 1000 << " ms\n";
 
     return 0;
 }
