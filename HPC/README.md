@@ -4,8 +4,6 @@
 
 Follow these steps to compile and execute CUDA (`.cu`) code in Google Colab:
 
-### Steps:
-
 1. **Enable GPU support**
    - Go to **`Runtime > Change runtime type`**
    - Set **Hardware accelerator** to **GPU (preferably T4)**
