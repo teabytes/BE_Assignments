@@ -5,7 +5,7 @@ using namespace std;
 using namespace std::chrono;
 
 // a function that runs on the GPU is declared with __global__
-__global__ void gpuAdd(int *A, int *B, int *C, int size) {
+__global__ void add(int *A, int *B, int *C, int size) {
     // calculate the global thread ID "id"
     // each GPU thread computes one element of the sum if "id" is within bounds.
     int id = blockDim.x * blockIdx.x + threadIdx.x;  
@@ -14,8 +14,8 @@ __global__ void gpuAdd(int *A, int *B, int *C, int size) {
     }
 }
 
-// sequential vector addition
-void cpuAdd(int *A, int *B, int *C, int size) {
+// optional: sequential vector additionv
+void seqAdd(int *A, int *B, int *C, int size) {
     for (int i=0; i<size; i++) {
         C[i] = A[i] + B[i];
     }
@@ -70,7 +70,7 @@ int main() {
     // launch gpuAdd() on GPU
     // each thread adds one pair of elements from X & Y
     auto start = high_resolution_clock::now();
-    gpuAdd<<<blocksPerGrid, threadsPerBlock>>>(X, Y, Z, vectorSize);
+    add<<<blocksPerGrid, threadsPerBlock>>>(X, Y, Z, vectorSize);
     cudaMemcpy(C, Z, vectorBytes, cudaMemcpyDeviceToHost);  // transfer result vector Z from GPU to CPU (C)
     auto stop = high_resolution_clock::now();
     
